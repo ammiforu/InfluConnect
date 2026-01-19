@@ -100,6 +100,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     lastName: string
   ) => {
     try {
+      console.log('Starting signup...');
+      // Profile creation is handled automatically by database trigger
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -112,51 +114,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
 
+      console.log('Auth signup completed:', { userId: data.user?.id, error: signUpError });
+
       if (signUpError) {
         console.error('Signup error details:', signUpError);
         return { error: signUpError };
       }
 
-      // Create user profile (requires RLS policy allowing INSERT)
-      if (data.user) {
-        const { error: profileError } = await supabase.from('users').insert({
-          id: data.user.id,
-          email: email,
-          role,
-          first_name: firstName,
-          last_name: lastName,
-        });
-
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-          return { error: profileError };
-        }
-
-        // Create role-specific profile
-        if (role === 'influencer') {
-          const { error: influencerError } = await supabase.from('influencers').insert({
-            user_id: data.user.id,
-            niche: 'other',
-            is_available: true,
-          });
-
-          if (influencerError) {
-            console.error('Error creating influencer profile:', influencerError);
-          }
-        } else if (role === 'brand') {
-          const { error: brandError } = await supabase.from('brands').insert({
-            user_id: data.user.id,
-            company_name: `${firstName}'s Company`,
-          });
-
-          if (brandError) {
-            console.error('Error creating brand profile:', brandError);
-          }
-        }
-      }
-
+      console.log('Signup successful! Profile created by database trigger.');
       return { error: null };
     } catch (error) {
+      console.error('Signup catch error:', error);
       return { error: error as Error };
     }
   };
