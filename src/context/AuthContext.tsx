@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { User as AuthUser, Session } from '@supabase/supabase-js';
 import type { User, UserRole } from '@/types';
@@ -27,21 +27,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const supabase = createClient();
+  // Use singleton supabase client
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+
+      return data as User;
+    } catch (err) {
+      console.error('Fetch profile error:', err);
       return null;
     }
-
-    return data as User;
   }, [supabase]);
 
   const refreshProfile = useCallback(async () => {
@@ -52,20 +58,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchProfile]);
 
   useEffect(() => {
+    let mounted = true;
+
     const initializeAuth = async () => {
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
-        if (currentSession?.user) {
+        if (mounted && currentSession?.user) {
           setSession(currentSession);
           setUser(currentSession.user);
           const profileData = await fetchProfile(currentSession.user.id);
-          setProfile(profileData);
+          if (mounted) setProfile(profileData);
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        if (mounted) console.error('Error initializing auth:', error);
       } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     };
 
@@ -73,12 +81,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        if (!mounted) return;
+        
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
 
         if (currentSession?.user) {
           const profileData = await fetchProfile(currentSession.user.id);
-          setProfile(profileData);
+          if (mounted) setProfile(profileData);
         } else {
           setProfile(null);
         }
@@ -88,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [supabase, fetchProfile]);

@@ -8,12 +8,11 @@ import type {
   RequestStatus,
 } from '@/types';
 
-const supabase = createClient();
-
 export async function createRequest(
   brandId: string,
   data: CreateRequestFormData
 ): Promise<CollaborationRequest> {
+  const supabase = createClient();
   const { data: request, error } = await supabase
     .from('collaboration_requests')
     .insert({
@@ -21,11 +20,10 @@ export async function createRequest(
       influencer_id: data.influencer_id,
       campaign_title: data.campaign_title,
       campaign_description: data.campaign_description,
-      deliverables: data.deliverables,
+      requirements: data.requirements || null,
       budget: data.budget,
       start_date: data.start_date,
       end_date: data.end_date,
-      deadline: data.deadline,
       status: 'requested',
     })
     .select()
@@ -39,6 +37,7 @@ export async function createRequest(
 }
 
 export async function getRequestById(id: string): Promise<CollaborationRequestWithDetails | null> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('collaboration_requests')
     .select(`
@@ -57,10 +56,22 @@ export async function getRequestById(id: string): Promise<CollaborationRequestWi
 }
 
 export async function getRequestsForInfluencer(
-  influencerId: string,
+  userId: string,
   params: RequestFilterParams = {}
 ): Promise<PaginatedResponse<CollaborationRequestWithDetails>> {
+  const supabase = createClient();
   const { status, page = 1, limit = 10 } = params;
+
+  // First get the influencer ID from user_id
+  const { data: influencer } = await supabase
+    .from('influencers')
+    .select('id')
+    .eq('user_id', userId)
+    .single();
+
+  if (!influencer) {
+    return { data: [], total: 0, page, limit, totalPages: 0 };
+  }
 
   let query = supabase
     .from('collaboration_requests')
@@ -69,7 +80,7 @@ export async function getRequestsForInfluencer(
       brand:brands(*, user:users(*)),
       influencer:influencers(*, user:users(*))
     `, { count: 'exact' })
-    .eq('influencer_id', influencerId)
+    .eq('influencer_id', influencer.id)
     .order('created_at', { ascending: false });
 
   if (status) {
@@ -96,10 +107,22 @@ export async function getRequestsForInfluencer(
 }
 
 export async function getRequestsForBrand(
-  brandId: string,
+  userId: string,
   params: RequestFilterParams = {}
 ): Promise<PaginatedResponse<CollaborationRequestWithDetails>> {
+  const supabase = createClient();
   const { status, page = 1, limit = 10 } = params;
+
+  // First get the brand ID from user_id
+  const { data: brand } = await supabase
+    .from('brands')
+    .select('id')
+    .eq('user_id', userId)
+    .single();
+
+  if (!brand) {
+    return { data: [], total: 0, page, limit, totalPages: 0 };
+  }
 
   let query = supabase
     .from('collaboration_requests')
@@ -108,7 +131,7 @@ export async function getRequestsForBrand(
       brand:brands(*, user:users(*)),
       influencer:influencers(*, user:users(*))
     `, { count: 'exact' })
-    .eq('brand_id', brandId)
+    .eq('brand_id', brand.id)
     .order('created_at', { ascending: false });
 
   if (status) {
@@ -139,6 +162,7 @@ export async function updateRequestStatus(
   status: RequestStatus,
   rejectionReason?: string
 ): Promise<CollaborationRequest> {
+  const supabase = createClient();
   const updateData: Partial<CollaborationRequest> = {
     status,
     updated_at: new Date().toISOString(),
@@ -169,6 +193,7 @@ export async function updateRequestStatus(
 }
 
 async function createCampaignFromRequest(request: CollaborationRequest): Promise<void> {
+  const supabase = createClient();
   const { error: campaignError } = await supabase
     .from('campaigns')
     .insert({
@@ -208,6 +233,7 @@ async function createCampaignFromRequest(request: CollaborationRequest): Promise
 }
 
 export async function deleteRequest(id: string): Promise<void> {
+  const supabase = createClient();
   const { error } = await supabase
     .from('collaboration_requests')
     .delete()

@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatNumber, formatInitials, formatCurrency } from '@/utils/formatters';
-import { NICHE_OPTIONS, AVAILABILITY_OPTIONS } from '@/utils/constants';
+import { NICHE_OPTIONS } from '@/utils/constants';
 import type { InfluencerWithProfile } from '@/types';
 
 interface InfluencerCardProps {
@@ -21,7 +21,6 @@ export function InfluencerCard({ influencer, onRequestClick }: InfluencerCardPro
   const initials = formatInitials(user.first_name, user.last_name);
   
   const nicheLabel = NICHE_OPTIONS.find(n => n.value === influencer.niche)?.label || influencer.niche;
-  const availabilityOption = AVAILABILITY_OPTIONS.find(a => a.value === influencer.availability_status);
 
   // Get total followers
   const totalFollowers = (influencer.instagram_followers || 0) + 
@@ -48,21 +47,16 @@ export function InfluencerCard({ influencer, onRequestClick }: InfluencerCardPro
                 </Link>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary">{nicheLabel}</Badge>
-                  <Badge 
-                    variant={
-                      influencer.availability_status === 'available' ? 'success' :
-                      influencer.availability_status === 'busy' ? 'warning' : 'secondary'
-                    }
-                  >
-                    {availabilityOption?.label || 'Unknown'}
+                  <Badge variant={influencer.is_available ? 'success' : 'secondary'}>
+                    {influencer.is_available ? 'Available' : 'Not Available'}
                   </Badge>
                 </div>
               </div>
             </div>
 
-            {user.bio && (
+            {influencer.bio && (
               <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                {user.bio}
+                {influencer.bio}
               </p>
             )}
 
@@ -86,11 +80,6 @@ export function InfluencerCard({ influencer, onRequestClick }: InfluencerCardPro
                   <span>{formatNumber(influencer.tiktok_followers)}</span>
                 </div>
               )}
-              {influencer.engagement_rate && (
-                <div className="text-sm text-muted-foreground">
-                  {influencer.engagement_rate}% engagement
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -98,8 +87,8 @@ export function InfluencerCard({ influencer, onRequestClick }: InfluencerCardPro
 
       <CardFooter className="bg-muted/50 px-6 py-3 flex items-center justify-between">
         <div className="text-sm">
-          {influencer.hourly_rate ? (
-            <span className="font-medium">{formatCurrency(influencer.hourly_rate)}/hr</span>
+          {influencer.rate_per_post ? (
+            <span className="font-medium">{formatCurrency(influencer.rate_per_post)}/post</span>
           ) : (
             <span className="text-muted-foreground">Rate not set</span>
           )}
@@ -108,7 +97,7 @@ export function InfluencerCard({ influencer, onRequestClick }: InfluencerCardPro
           <Link href={`/influencers/${influencer.id}`}>
             <Button variant="outline" size="sm">View Profile</Button>
           </Link>
-          {onRequestClick && influencer.availability_status === 'available' && (
+          {onRequestClick && influencer.is_available && (
             <Button size="sm" onClick={() => onRequestClick(influencer.id)}>
               Send Request
             </Button>

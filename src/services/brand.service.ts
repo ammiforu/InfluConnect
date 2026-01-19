@@ -1,9 +1,8 @@
 import { createClient } from '@/lib/supabase/client';
 import type { Brand, BrandWithProfile } from '@/types';
 
-const supabase = createClient();
-
 export async function getBrandById(id: string): Promise<BrandWithProfile | null> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('brands')
     .select(`
@@ -21,6 +20,7 @@ export async function getBrandById(id: string): Promise<BrandWithProfile | null>
 }
 
 export async function getBrandByUserId(userId: string): Promise<BrandWithProfile | null> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('brands')
     .select(`
@@ -42,6 +42,7 @@ export async function updateBrandProfile(
   id: string,
   updates: Partial<Brand>
 ): Promise<Brand> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('brands')
     .update({
@@ -63,6 +64,7 @@ export async function uploadCompanyLogo(
   brandId: string,
   file: File
 ): Promise<string> {
+  const supabase = createClient();
   const fileExt = file.name.split('.').pop();
   const fileName = `${brandId}/logo.${fileExt}`;
 

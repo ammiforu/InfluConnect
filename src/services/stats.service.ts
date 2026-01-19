@@ -1,9 +1,28 @@
 import { createClient } from '@/lib/supabase/client';
 import type { UserStats } from '@/types';
 
-const supabase = createClient();
+export async function getInfluencerStats(userId: string): Promise<UserStats> {
+  const supabase = createClient();
+  
+  // First get the influencer record
+  const { data: influencer } = await supabase
+    .from('influencers')
+    .select('id')
+    .eq('user_id', userId)
+    .single();
 
-export async function getInfluencerStats(influencerId: string): Promise<UserStats> {
+  if (!influencer) {
+    return {
+      totalCampaigns: 0,
+      activeCampaigns: 0,
+      pendingRequests: 0,
+      completedCampaigns: 0,
+      totalEarnings: 0,
+    };
+  }
+
+  const influencerId = influencer.id;
+
   // Get campaign counts
   const { data: campaigns } = await supabase
     .from('campaigns')
@@ -49,7 +68,28 @@ export async function getInfluencerStats(influencerId: string): Promise<UserStat
   };
 }
 
-export async function getBrandStats(brandId: string): Promise<UserStats> {
+export async function getBrandStats(userId: string): Promise<UserStats> {
+  const supabase = createClient();
+  
+  // First get the brand record
+  const { data: brand } = await supabase
+    .from('brands')
+    .select('id')
+    .eq('user_id', userId)
+    .single();
+
+  if (!brand) {
+    return {
+      totalCampaigns: 0,
+      activeCampaigns: 0,
+      pendingRequests: 0,
+      completedCampaigns: 0,
+      totalSpent: 0,
+    };
+  }
+
+  const brandId = brand.id;
+
   // Get campaign counts
   const { data: campaigns } = await supabase
     .from('campaigns')

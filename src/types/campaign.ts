@@ -40,11 +40,10 @@ export interface CreateRequestFormData {
   influencer_id: string;
   campaign_title: string;
   campaign_description: string;
-  deliverables: Omit<DeliverableItem, 'id'>[];
+  requirements?: string;
   budget: number;
   start_date: string;
   end_date: string;
-  deadline: string;
 }
 
 // Campaign (accepted collaboration)

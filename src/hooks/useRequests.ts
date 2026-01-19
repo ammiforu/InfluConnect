@@ -19,17 +19,54 @@ import type {
 } from '@/types';
 
 export function useRequests(params: RequestFilterParams = {}) {
-  const { profile } = useAuth();
+  const { profile, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<PaginatedResponse<CollaborationRequestWithDetails> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [filterParams, setFilterParams] = useState(params);
 
-  const fetchRequests = useCallback(async () => {
-    if (!profile) return;
+  useEffect(() => {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return;
+    }
 
+    // No profile means user is not logged in
+    if (!profile) {
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchRequests = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = profile.role === 'influencer'
+          ? await getRequestsForInfluencer(profile.id, filterParams)
+          : await getRequestsForBrand(profile.id, filterParams);
+        setData(result);
+      } catch (err) {
+        console.error('Error fetching requests:', err);
+        setError(err as Error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRequests();
+  }, [authLoading, profile, filterParams]);
+
+  const updateFilter = useCallback((newParams: Partial<RequestFilterParams>) => {
+    setFilterParams((prev) => ({ ...prev, ...newParams, page: 1 }));
+  }, []);
+
+  const setPage = useCallback((page: number) => {
+    setFilterParams((prev) => ({ ...prev, page }));
+  }, []);
+
+  const refresh = useCallback(async () => {
+    if (!profile) return;
     setIsLoading(true);
-    setError(null);
     try {
       const result = profile.role === 'influencer'
         ? await getRequestsForInfluencer(profile.id, filterParams)
@@ -42,18 +79,6 @@ export function useRequests(params: RequestFilterParams = {}) {
     }
   }, [profile, filterParams]);
 
-  useEffect(() => {
-    fetchRequests();
-  }, [fetchRequests]);
-
-  const updateFilter = useCallback((newParams: Partial<RequestFilterParams>) => {
-    setFilterParams((prev) => ({ ...prev, ...newParams, page: 1 }));
-  }, []);
-
-  const setPage = useCallback((page: number) => {
-    setFilterParams((prev) => ({ ...prev, page }));
-  }, []);
-
   return {
     requests: data?.data || [],
     total: data?.total || 0,
@@ -63,7 +88,7 @@ export function useRequests(params: RequestFilterParams = {}) {
     error,
     updateFilter,
     setPage,
-    refresh: fetchRequests,
+    refresh,
   };
 }
 

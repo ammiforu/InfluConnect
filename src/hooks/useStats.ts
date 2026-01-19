@@ -6,16 +6,45 @@ import { getInfluencerStats, getBrandStats } from '@/services/stats.service';
 import type { UserStats } from '@/types';
 
 export function useStats() {
-  const { profile } = useAuth();
+  const { profile, isLoading: authLoading } = useAuth();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchStats = useCallback(async () => {
-    if (!profile) return;
+  useEffect(() => {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return;
+    }
 
+    // No profile means user is not logged in or profile not found
+    if (!profile) {
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchStats = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = profile.role === 'influencer'
+          ? await getInfluencerStats(profile.id)
+          : await getBrandStats(profile.id);
+        setStats(result);
+      } catch (err) {
+        console.error('Error fetching stats:', err);
+        setError(err as Error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [authLoading, profile]);
+
+  const refresh = useCallback(async () => {
+    if (!profile) return;
     setIsLoading(true);
-    setError(null);
     try {
       const result = profile.role === 'influencer'
         ? await getInfluencerStats(profile.id)
@@ -28,14 +57,10 @@ export function useStats() {
     }
   }, [profile]);
 
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
-
   return {
     stats,
     isLoading,
     error,
-    refresh: fetchStats,
+    refresh,
   };
 }

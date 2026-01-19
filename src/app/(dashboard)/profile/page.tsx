@@ -38,7 +38,7 @@ import {
 import type { BrandWithProfile, InfluencerWithProfile } from '@/types';
 
 export default function ProfilePage() {
-  const { profile, user, refreshProfile } = useAuth();
+  const { profile, user, refreshProfile, isLoading: authLoading } = useAuth();
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -48,6 +48,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const loadProfiles = async () => {
+      if (authLoading) return;
       if (!profile) {
         setIsFetchingProfile(false);
         return;
@@ -68,7 +69,7 @@ export default function ProfilePage() {
     };
 
     loadProfiles();
-  }, [profile]);
+  }, [profile, authLoading]);
 
   // Influencer form state
   const [influencerForm, setInfluencerForm] = useState({

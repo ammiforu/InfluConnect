@@ -1,13 +1,12 @@
 import { createClient } from '@/lib/supabase/client';
 import type { Message, MessageWithSender } from '@/types';
 
-const supabase = createClient();
-
 export async function getMessages(
   campaignId: string,
   page = 1,
   limit = 50
 ): Promise<{ messages: MessageWithSender[]; total: number }> {
+  const supabase = createClient();
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
@@ -38,6 +37,7 @@ export async function sendMessage(
   fileUrl?: string,
   fileName?: string
 ): Promise<Message> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('messages')
     .insert({
@@ -63,6 +63,7 @@ export async function markMessagesAsRead(
   campaignId: string,
   userId: string
 ): Promise<void> {
+  const supabase = createClient();
   const { error } = await supabase
     .from('messages')
     .update({ is_read: true })
@@ -79,6 +80,7 @@ export async function uploadMessageFile(
   campaignId: string,
   file: File
 ): Promise<{ url: string; name: string }> {
+  const supabase = createClient();
   const fileExt = file.name.split('.').pop();
   const fileName = `${campaignId}/${Date.now()}.${fileExt}`;
 
@@ -105,6 +107,7 @@ export function subscribeToMessages(
   campaignId: string,
   callback: (message: Message) => void
 ) {
+  const supabase = createClient();
   return supabase
     .channel(`messages:${campaignId}`)
     .on(
@@ -123,5 +126,6 @@ export function subscribeToMessages(
 }
 
 export function unsubscribeFromMessages(campaignId: string) {
+  const supabase = createClient();
   supabase.removeChannel(supabase.channel(`messages:${campaignId}`));
 }

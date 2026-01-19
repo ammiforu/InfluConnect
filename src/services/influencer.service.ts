@@ -1,11 +1,10 @@
 import { createClient } from '@/lib/supabase/client';
 import type { User, Influencer, InfluencerWithProfile, InfluencerSearchParams, PaginatedResponse } from '@/types';
 
-const supabase = createClient();
-
 export async function getInfluencers(
   params: InfluencerSearchParams = {}
 ): Promise<PaginatedResponse<InfluencerWithProfile>> {
+  const supabase = createClient();
   const {
     query,
     niche,
@@ -67,7 +66,10 @@ export async function getInfluencers(
 
   const { data, error, count } = await queryBuilder;
 
+  console.log('getInfluencers result:', { data, error, count });
+
   if (error) {
+    console.error('getInfluencers error:', error);
     throw new Error(error.message);
   }
 
@@ -91,6 +93,7 @@ export async function getInfluencers(
 }
 
 export async function getInfluencerById(id: string): Promise<InfluencerWithProfile | null> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('influencers')
     .select(`
@@ -108,6 +111,7 @@ export async function getInfluencerById(id: string): Promise<InfluencerWithProfi
 }
 
 export async function getInfluencerByUserId(userId: string): Promise<InfluencerWithProfile | null> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('influencers')
     .select(`
@@ -129,6 +133,7 @@ export async function updateInfluencerProfile(
   id: string,
   updates: Partial<Influencer>
 ): Promise<Influencer> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('influencers')
     .update({
@@ -150,6 +155,7 @@ export async function updateUserProfile(
   id: string,
   updates: Partial<User>
 ): Promise<User> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('users')
     .update({
@@ -171,6 +177,7 @@ export async function uploadProfilePicture(
   userId: string,
   file: File
 ): Promise<string> {
+  const supabase = createClient();
   const fileExt = file.name.split('.').pop();
   const fileName = `${userId}/profile.${fileExt}`;
 

@@ -21,17 +21,52 @@ import type {
 } from '@/types';
 
 export function useCampaigns(params: CampaignFilterParams = {}) {
-  const { profile } = useAuth();
+  const { profile, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<PaginatedResponse<CampaignWithDetails> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [filterParams, setFilterParams] = useState(params);
 
-  const fetchCampaigns = useCallback(async () => {
-    if (!profile) return;
+  useEffect(() => {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return;
+    }
 
+    // No profile means user is not logged in
+    if (!profile) {
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchCampaigns = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await getCampaignsForUser(profile.id, profile.role, filterParams);
+        setData(result);
+      } catch (err) {
+        console.error('Error fetching campaigns:', err);
+        setError(err as Error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCampaigns();
+  }, [authLoading, profile, filterParams]);
+
+  const updateFilter = useCallback((newParams: Partial<CampaignFilterParams>) => {
+    setFilterParams((prev) => ({ ...prev, ...newParams, page: 1 }));
+  }, []);
+
+  const setPage = useCallback((page: number) => {
+    setFilterParams((prev) => ({ ...prev, page }));
+  }, []);
+
+  const refresh = useCallback(async () => {
+    if (!profile) return;
     setIsLoading(true);
-    setError(null);
     try {
       const result = await getCampaignsForUser(profile.id, profile.role, filterParams);
       setData(result);
@@ -42,18 +77,6 @@ export function useCampaigns(params: CampaignFilterParams = {}) {
     }
   }, [profile, filterParams]);
 
-  useEffect(() => {
-    fetchCampaigns();
-  }, [fetchCampaigns]);
-
-  const updateFilter = useCallback((newParams: Partial<CampaignFilterParams>) => {
-    setFilterParams((prev) => ({ ...prev, ...newParams, page: 1 }));
-  }, []);
-
-  const setPage = useCallback((page: number) => {
-    setFilterParams((prev) => ({ ...prev, page }));
-  }, []);
-
   return {
     campaigns: data?.data || [],
     total: data?.total || 0,
@@ -63,7 +86,7 @@ export function useCampaigns(params: CampaignFilterParams = {}) {
     error,
     updateFilter,
     setPage,
-    refresh: fetchCampaigns,
+    refresh,
   };
 }
 

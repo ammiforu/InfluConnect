@@ -8,9 +8,8 @@ import type {
   PaginatedResponse,
 } from '@/types';
 
-const supabase = createClient();
-
 export async function getCampaignById(id: string): Promise<CampaignWithDetails | null> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('campaigns')
     .select(`
@@ -34,7 +33,26 @@ export async function getCampaignsForUser(
   role: 'influencer' | 'brand',
   params: CampaignFilterParams = {}
 ): Promise<PaginatedResponse<CampaignWithDetails>> {
+  const supabase = createClient();
   const { status, page = 1, limit = 10 } = params;
+
+  // First get the brand/influencer ID from user_id
+  const table = role === 'influencer' ? 'influencers' : 'brands';
+  const { data: record } = await supabase
+    .from(table)
+    .select('id')
+    .eq('user_id', userId)
+    .single();
+
+  if (!record) {
+    return {
+      data: [],
+      total: 0,
+      page,
+      limit,
+      totalPages: 0,
+    };
+  }
 
   const idColumn = role === 'influencer' ? 'influencer_id' : 'brand_id';
 
@@ -46,7 +64,7 @@ export async function getCampaignsForUser(
       influencer:influencers(*, user:users(*)),
       deliverables(*)
     `, { count: 'exact' })
-    .eq(idColumn, userId)
+    .eq(idColumn, record.id)
     .order('created_at', { ascending: false });
 
   if (status) {
@@ -76,6 +94,7 @@ export async function updateCampaignStatus(
   id: string,
   status: CampaignStatus
 ): Promise<Campaign> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('campaigns')
     .update({
@@ -106,6 +125,7 @@ export async function updateCampaignProgress(
   id: string,
   progressPercentage: number
 ): Promise<Campaign> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('campaigns')
     .update({
@@ -125,6 +145,7 @@ export async function updateCampaignProgress(
 
 // Deliverable functions
 export async function getDeliverables(campaignId: string): Promise<Deliverable[]> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('deliverables')
     .select('*')
@@ -143,6 +164,7 @@ export async function submitDeliverable(
   submissionUrl: string,
   submissionNotes?: string
 ): Promise<Deliverable> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('deliverables')
     .update({
@@ -167,6 +189,7 @@ export async function submitDeliverable(
 }
 
 export async function approveDeliverable(id: string): Promise<Deliverable> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('deliverables')
     .update({
@@ -192,6 +215,7 @@ export async function rejectDeliverable(
   id: string,
   rejectionReason: string
 ): Promise<Deliverable> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('deliverables')
     .update({

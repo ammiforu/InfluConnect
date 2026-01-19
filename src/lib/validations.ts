@@ -96,17 +96,13 @@ export const createRequestSchema = z.object({
   influencer_id: z.string().uuid('Invalid influencer ID'),
   campaign_title: z.string().min(1, 'Campaign title is required').max(200),
   campaign_description: z.string().min(10, 'Description must be at least 10 characters').max(5000),
-  deliverables: z.array(deliverableItemSchema).min(1, 'At least one deliverable is required'),
+  requirements: z.string().max(5000).optional(),
   budget: z.number().min(0, 'Budget must be positive'),
   start_date: z.string().min(1, 'Start date is required'),
   end_date: z.string().min(1, 'End date is required'),
-  deadline: z.string().min(1, 'Deadline is required'),
 }).refine((data) => new Date(data.end_date) >= new Date(data.start_date), {
   message: 'End date must be after start date',
   path: ['end_date'],
-}).refine((data) => new Date(data.deadline) <= new Date(data.end_date), {
-  message: 'Deadline must be on or before end date',
-  path: ['deadline'],
 });
 
 export const rejectRequestSchema = z.object({
