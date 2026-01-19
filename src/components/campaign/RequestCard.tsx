@@ -85,13 +85,15 @@ export function RequestCard({ request, onAccept, onReject }: RequestCardProps) {
           </div>
         </div>
 
-        {/* Deliverables preview */}
-        <div className="text-sm">
-          <span className="font-medium">{request.deliverables.length} deliverables: </span>
-          <span className="text-muted-foreground">
-            {request.deliverables.map(d => d.title).join(', ')}
-          </span>
-        </div>
+        {/* Requirements preview */}
+        {request.requirements && (
+          <div className="text-sm">
+            <span className="font-medium">Requirements: </span>
+            <span className="text-muted-foreground line-clamp-2">
+              {request.requirements}
+            </span>
+          </div>
+        )}
       </CardContent>
 
       <CardFooter className="pt-0 flex gap-2">

@@ -165,11 +165,11 @@ export function useRequestActions() {
     }
   }, []);
 
-  const reject = useCallback(async (id: string, reason?: string) => {
+  const reject = useCallback(async (id: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await updateRequestStatus(id, 'rejected', reason);
+      const result = await updateRequestStatus(id, 'rejected');
       return result;
     } catch (err) {
       setError(err as Error);

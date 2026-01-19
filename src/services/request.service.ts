@@ -160,17 +160,12 @@ export async function getRequestsForBrand(
 export async function updateRequestStatus(
   id: string,
   status: RequestStatus,
-  rejectionReason?: string
 ): Promise<CollaborationRequest> {
   const supabase = createClient();
-  const updateData: Partial<CollaborationRequest> = {
+  const updateData = {
     status,
     updated_at: new Date().toISOString(),
   };
-
-  if (rejectionReason) {
-    updateData.rejection_reason = rejectionReason;
-  }
 
   const { data, error } = await supabase
     .from('collaboration_requests')
@@ -194,41 +189,38 @@ export async function updateRequestStatus(
 
 async function createCampaignFromRequest(request: CollaborationRequest): Promise<void> {
   const supabase = createClient();
+  
+  // Check if campaign already exists for this request
+  const { data: existingCampaign } = await supabase
+    .from('campaigns')
+    .select('id')
+    .eq('request_id', request.id)
+    .single();
+
+  if (existingCampaign) {
+    console.log('Campaign already exists for request:', request.id);
+    return; // Campaign already exists, don't create a duplicate
+  }
+
   const { error: campaignError } = await supabase
     .from('campaigns')
     .insert({
-      id: request.id, // Use same ID as request
+      request_id: request.id,
       brand_id: request.brand_id,
       influencer_id: request.influencer_id,
       title: request.campaign_title,
       description: request.campaign_description,
+      requirements: request.requirements || null,
       status: 'accepted',
       progress_percentage: 0,
       budget: request.budget,
       start_date: request.start_date,
-      end_date: request.end_date,
-      deadline: request.deadline,
+      deadline: request.end_date, // Use end_date as deadline
     });
 
   if (campaignError) {
+    console.error('Error creating campaign:', campaignError);
     throw new Error(campaignError.message);
-  }
-
-  // Create deliverables from request
-  const deliverables = request.deliverables.map((d) => ({
-    campaign_id: request.id,
-    title: d.title,
-    description: d.description || '',
-    type: d.type,
-    status: 'pending',
-  }));
-
-  const { error: deliverablesError } = await supabase
-    .from('deliverables')
-    .insert(deliverables);
-
-  if (deliverablesError) {
-    console.error('Error creating deliverables:', deliverablesError);
   }
 }
 

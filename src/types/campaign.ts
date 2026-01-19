@@ -18,13 +18,11 @@ export interface CollaborationRequest {
   influencer_id: string;
   campaign_title: string;
   campaign_description: string;
-  deliverables: DeliverableItem[];
+  requirements?: string | null;
   budget: number;
   start_date: string;
   end_date: string;
-  deadline: string;
   status: RequestStatus;
-  rejection_reason?: string | null;
   created_at: string;
   updated_at: string;
 }
