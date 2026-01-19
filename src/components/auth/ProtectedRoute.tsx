@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { PageLoading } from '@/components/ui/loading';
@@ -13,25 +13,27 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const router = useRouter();
   const { isAuthenticated, isLoading, profile } = useAuth();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+    if (!isLoading && !isAuthenticated && !isRedirecting) {
+      setIsRedirecting(true);
+      router.replace('/login');
     }
 
     if (!isLoading && isAuthenticated && profile && allowedRoles) {
       if (!allowedRoles.includes(profile.role)) {
-        router.push('/dashboard');
+        router.replace('/dashboard');
       }
     }
-  }, [isAuthenticated, isLoading, profile, allowedRoles, router]);
+  }, [isAuthenticated, isLoading, profile, allowedRoles, router, isRedirecting]);
 
-  if (isLoading) {
+  if (isLoading || isRedirecting) {
     return <PageLoading />;
   }
 
   if (!isAuthenticated) {
-    return null;
+    return <PageLoading />;
   }
 
   if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {

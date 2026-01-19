@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useStats } from '@/hooks/useStats';
 import { useCampaigns } from '@/hooks/useCampaigns';
@@ -135,12 +136,12 @@ export default function DashboardPage() {
 
 function QuickActionLink({ href, label }: { href: string; label: string }) {
   return (
-    <a 
+    <Link 
       href={href}
       className="flex items-center justify-between p-3 rounded-lg hover:bg-muted transition-colors group"
     >
       <span className="text-sm">{label}</span>
       <TrendingUp className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-    </a>
+    </Link>
   );
 }
