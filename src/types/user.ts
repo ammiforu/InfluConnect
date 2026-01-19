@@ -1,22 +1,23 @@
 import type { User } from './auth';
-import type { AvailabilityStatus, NicheCategory } from './enums';
+import type { NicheCategory } from './enums';
 
 // Influencer profile
 export interface Influencer {
   id: string;
-  niche: NicheCategory;
+  user_id: string;
+  bio: string | null;
+  niche: NicheCategory | null;
+  platforms: string[];
   instagram_handle: string | null;
-  instagram_followers: number | null;
+  instagram_followers: number;
   tiktok_handle: string | null;
-  tiktok_followers: number | null;
+  tiktok_followers: number;
   youtube_handle: string | null;
-  youtube_subscribers: number | null;
+  youtube_subscribers: number;
   twitter_handle: string | null;
-  twitter_followers: number | null;
-  engagement_rate: number | null;
-  hourly_rate: number | null;
-  availability_status: AvailabilityStatus;
-  is_public: boolean;
+  twitter_followers: number;
+  rate_per_post: number;
+  is_available: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -28,7 +29,8 @@ export interface InfluencerWithProfile extends Influencer {
 
 // Influencer profile form data
 export interface InfluencerFormData {
-  niche: NicheCategory;
+  niche: NicheCategory | null;
+  bio?: string;
   instagram_handle?: string;
   instagram_followers?: number;
   tiktok_handle?: string;
@@ -37,10 +39,8 @@ export interface InfluencerFormData {
   youtube_subscribers?: number;
   twitter_handle?: string;
   twitter_followers?: number;
-  engagement_rate?: number;
-  hourly_rate?: number;
-  availability_status: AvailabilityStatus;
-  is_public: boolean;
+  rate_per_post?: number;
+  is_available: boolean;
 }
 
 // Influencer search/filter params
@@ -50,9 +50,9 @@ export interface InfluencerSearchParams {
   minFollowers?: number;
   maxFollowers?: number;
   platform?: 'instagram' | 'tiktok' | 'youtube' | 'twitter';
-  availability?: AvailabilityStatus;
+  availability?: boolean;
   minEngagement?: number;
-  maxHourlyRate?: number;
+  maxRatePerPost?: number;
   page?: number;
   limit?: number;
   sortBy?: 'followers' | 'engagement' | 'rate' | 'newest';

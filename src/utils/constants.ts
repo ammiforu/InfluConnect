@@ -112,15 +112,15 @@ export const NAV_LINKS = {
     { href: '/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
     { href: '/requests', label: 'Requests', icon: 'Inbox' },
     { href: '/campaigns', label: 'Campaigns', icon: 'Briefcase' },
+    { href: '/messages', label: 'Messages', icon: 'MessageSquare' },
     { href: '/profile', label: 'My Profile', icon: 'User' },
-    { href: '/settings', label: 'Settings', icon: 'Settings' },
   ],
   brand: [
     { href: '/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
-    { href: '/browse', label: 'Browse Influencers', icon: 'Search' },
+    { href: '/discover', label: 'Discover Influencers', icon: 'Search' },
     { href: '/requests', label: 'Requests', icon: 'Send' },
     { href: '/campaigns', label: 'Campaigns', icon: 'Briefcase' },
+    { href: '/messages', label: 'Messages', icon: 'MessageSquare' },
     { href: '/profile', label: 'Company Profile', icon: 'Building2' },
-    { href: '/settings', label: 'Settings', icon: 'Settings' },
   ],
 } as const;

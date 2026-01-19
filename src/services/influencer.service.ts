@@ -14,7 +14,7 @@ export async function getInfluencers(
     platform = 'instagram',
     availability,
     minEngagement,
-    maxHourlyRate,
+    maxRatePerPost,
     page = 1,
     limit = 10,
     sortBy = 'followers',
@@ -26,24 +26,23 @@ export async function getInfluencers(
     .select(`
       *,
       user:users(*)
-    `, { count: 'exact' })
-    .eq('is_public', true);
+    `, { count: 'exact' });
 
   // Apply filters
   if (niche) {
     queryBuilder = queryBuilder.eq('niche', niche);
   }
 
-  if (availability) {
-    queryBuilder = queryBuilder.eq('availability_status', availability);
+  if (availability !== undefined) {
+    queryBuilder = queryBuilder.eq('is_available', availability);
   }
 
   if (minEngagement) {
     queryBuilder = queryBuilder.gte('engagement_rate', minEngagement);
   }
 
-  if (maxHourlyRate) {
-    queryBuilder = queryBuilder.lte('hourly_rate', maxHourlyRate);
+  if (maxRatePerPost) {
+    queryBuilder = queryBuilder.lte('rate_per_post', maxRatePerPost);
   }
 
   // Platform-specific follower filters
@@ -58,7 +57,7 @@ export async function getInfluencers(
   // Sorting
   const sortColumn = sortBy === 'followers' ? followerColumn :
                      sortBy === 'engagement' ? 'engagement_rate' :
-                     sortBy === 'rate' ? 'hourly_rate' : 'created_at';
+                     sortBy === 'rate' ? 'rate_per_post' : 'created_at';
   queryBuilder = queryBuilder.order(sortColumn, { ascending: sortOrder === 'asc' });
 
   // Pagination
@@ -103,6 +102,24 @@ export async function getInfluencerById(id: string): Promise<InfluencerWithProfi
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  return data as InfluencerWithProfile;
+}
+
+export async function getInfluencerByUserId(userId: string): Promise<InfluencerWithProfile | null> {
+  const { data, error } = await supabase
+    .from('influencers')
+    .select(`
+      *,
+      user:users(*)
+    `)
+    .eq('user_id', userId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching influencer by user_id:', error);
+    return null;
   }
 
   return data as InfluencerWithProfile;

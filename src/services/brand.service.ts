@@ -20,6 +20,24 @@ export async function getBrandById(id: string): Promise<BrandWithProfile | null>
   return data as BrandWithProfile;
 }
 
+export async function getBrandByUserId(userId: string): Promise<BrandWithProfile | null> {
+  const { data, error } = await supabase
+    .from('brands')
+    .select(`
+      *,
+      user:users(*)
+    `)
+    .eq('user_id', userId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching brand by user_id:', error);
+    return null;
+  }
+
+  return data as BrandWithProfile;
+}
+
 export async function updateBrandProfile(
   id: string,
   updates: Partial<Brand>

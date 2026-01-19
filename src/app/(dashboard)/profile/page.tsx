@@ -25,12 +25,13 @@ import { formatInitials } from '@/utils/formatters';
 import { Upload, Instagram, Youtube } from 'lucide-react';
 import {
   getInfluencerById,
+  getInfluencerByUserId,
   updateInfluencerProfile,
-  updateUserProfile,
   uploadProfilePicture,
 } from '@/services/influencer.service';
 import {
   getBrandById,
+  getBrandByUserId,
   updateBrandProfile,
   uploadCompanyLogo,
 } from '@/services/brand.service';
@@ -53,10 +54,10 @@ export default function ProfilePage() {
       }
       try {
         if (profile.role === 'influencer') {
-          const data = await getInfluencerById(profile.id);
+          const data = await getInfluencerByUserId(profile.id);
           setInfluencer(data);
         } else {
-          const data = await getBrandById(profile.id);
+          const data = await getBrandByUserId(profile.id);
           setBrand(data);
         }
       } catch (error) {
@@ -71,7 +72,7 @@ export default function ProfilePage() {
 
   // Influencer form state
   const [influencerForm, setInfluencerForm] = useState({
-    bio: profile?.bio || '',
+    bio: '',
     niche: '',
     instagram_handle: '',
     instagram_followers: 0,
@@ -79,8 +80,8 @@ export default function ProfilePage() {
     youtube_subscribers: 0,
     tiktok_handle: '',
     tiktok_followers: 0,
-    hourly_rate: 0,
-    availability_status: 'available',
+    rate_per_post: 0,
+    is_available: true,
   });
 
   // Brand form state
@@ -100,20 +101,20 @@ export default function ProfilePage() {
   useEffect(() => {
     if (influencer) {
       setInfluencerForm({
-        bio: profile?.bio || '',
-        niche: influencer.niche,
+        bio: influencer.bio || '',
+        niche: influencer.niche || '',
         instagram_handle: influencer.instagram_handle || '',
         instagram_followers: influencer.instagram_followers || 0,
         youtube_handle: influencer.youtube_handle || '',
         youtube_subscribers: influencer.youtube_subscribers || 0,
         tiktok_handle: influencer.tiktok_handle || '',
         tiktok_followers: influencer.tiktok_followers || 0,
-        hourly_rate: influencer.hourly_rate || 0,
-        availability_status: influencer.availability_status,
+        rate_per_post: influencer.rate_per_post || 0,
+        is_available: influencer.is_available ?? true,
       });
       setProfilePicture(influencer.user?.profile_picture_url || profilePicture);
     }
-  }, [influencer, profile?.bio]);
+  }, [influencer]);
 
   useEffect(() => {
     if (brand) {
@@ -131,8 +132,15 @@ export default function ProfilePage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      if (!influencer) return;
+      if (!influencer) {
+        console.log('No influencer found');
+        return;
+      }
+      console.log('Saving influencer profile:', influencerForm);
+      console.log('Influencer ID:', influencer.id);
+      
       await updateInfluencerProfile(influencer.id, {
+        bio: influencerForm.bio,
         niche: influencerForm.niche as any,
         instagram_handle: influencerForm.instagram_handle,
         instagram_followers: influencerForm.instagram_followers,
@@ -140,17 +148,17 @@ export default function ProfilePage() {
         youtube_subscribers: influencerForm.youtube_subscribers,
         tiktok_handle: influencerForm.tiktok_handle,
         tiktok_followers: influencerForm.tiktok_followers,
-        hourly_rate: influencerForm.hourly_rate,
-        availability_status: influencerForm.availability_status as any,
+        rate_per_post: influencerForm.rate_per_post,
+        is_available: influencerForm.is_available,
       });
-      if (profile) {
-        await updateUserProfile(profile.id, { bio: influencerForm.bio });
-      }
+      console.log('Influencer profile updated');
+      
       await refreshProfile();
       const updated = await getInfluencerById(influencer.id);
       setInfluencer(updated);
       toast.success('Profile updated successfully');
     } catch (error) {
+      console.error('Profile update error:', error);
       toast.error('Failed to update profile');
     } finally {
       setIsLoading(false);
@@ -299,14 +307,14 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Hourly Rate ($)</Label>
+                      <Label>Rate Per Post ($)</Label>
                       <Input
                         type="number"
                         min="0"
-                        value={influencerForm.hourly_rate}
+                        value={influencerForm.rate_per_post}
                         onChange={(e) => setInfluencerForm(prev => ({ 
                           ...prev, 
-                          hourly_rate: parseInt(e.target.value) || 0 
+                          rate_per_post: parseInt(e.target.value) || 0 
                         }))}
                       />
                     </div>
@@ -316,11 +324,11 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id="available"
-                      checked={influencerForm.availability_status !== 'unavailable'}
+                      checked={influencerForm.is_available}
                       onCheckedChange={(checked) => 
                         setInfluencerForm(prev => ({
                           ...prev,
-                          availability_status: (checked ? 'available' : 'unavailable') as any,
+                          is_available: !!checked,
                         }))
                       }
                     />

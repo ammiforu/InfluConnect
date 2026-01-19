@@ -12,11 +12,11 @@ export interface AuthUser {
 // Extended user profile
 export interface User {
   id: string;
+  email: string;
   role: UserRole;
   first_name: string;
   last_name: string;
   profile_picture_url: string | null;
-  bio: string | null;
   created_at: string;
   updated_at: string;
 }
