@@ -50,7 +50,7 @@ export interface InfluencerSearchParams {
   minFollowers?: number;
   maxFollowers?: number;
   platform?: 'instagram' | 'tiktok' | 'youtube' | 'twitter';
-  availability?: boolean;
+  availability?: 'available' | 'busy' | 'unavailable';
   minEngagement?: number;
   maxRatePerPost?: number;
   page?: number;

@@ -148,7 +148,7 @@ export function InfluencerSearch({ params, onParamsChange }: InfluencerSearchPro
                 <Select
                   value={localParams.availability || ''}
                   onValueChange={(value) => 
-                    setLocalParams({ ...localParams, availability: value as any })
+                    setLocalParams({ ...localParams, availability: value as 'available' | 'busy' | 'unavailable' })
                   }
                 >
                   <SelectTrigger>
