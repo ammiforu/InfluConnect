@@ -24,9 +24,9 @@ function termFrequency(tokens: string[]): Map<string, number> {
     tf.set(token, (tf.get(token) || 0) + 1);
   }
   // Normalize by total tokens
-  for (const [key, val] of tf) {
+  tf.forEach((val, key) => {
     tf.set(key, val / tokens.length);
-  }
+  });
   return tf;
 }
 
@@ -40,12 +40,12 @@ export function buildVocabulary(texts: string[]): void {
 
   // Collect all unique terms and their document frequencies
   const dfMap = new Map<string, number>();
-  for (const tokens of tokenizedDocs) {
-    const unique = new Set(tokens);
-    for (const token of unique) {
+  tokenizedDocs.forEach((tokens) => {
+    const uniqueArr = tokens.filter((v, i, a) => a.indexOf(v) === i);
+    uniqueArr.forEach((token) => {
       dfMap.set(token, (dfMap.get(token) || 0) + 1);
-    }
-  }
+    });
+  });
 
   // Keep top 5000 most common terms as vocabulary for manageable vector size
   vocabulary = Array.from(dfMap.entries())
@@ -55,10 +55,10 @@ export function buildVocabulary(texts: string[]): void {
 
   // Compute IDF: log(N / df)
   idfValues = new Map();
-  for (const term of vocabulary) {
+  vocabulary.forEach((term) => {
     const df = dfMap.get(term) || 1;
     idfValues.set(term, Math.log(docCount / df) + 1);
-  }
+  });
 }
 
 /** Convert a single text to a TF-IDF vector using the shared vocabulary */
