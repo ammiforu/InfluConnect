@@ -17,6 +17,13 @@ A two-sided marketplace SaaS platform connecting influencers with brands for cam
 - **Campaign Management**: Track campaign progress and deliverables
 - **Review System**: Rate and review completed collaborations
 
+### AI-Powered Chatbot
+- **RAG-Based Assistant**: Context-aware chatbot trained on platform documentation
+- **Instant Answers**: Get help with campaigns, profiles, collaborations, and more
+- **Local TF-IDF Embeddings**: No external embedding API needed — runs locally
+- **Multi-Model Fallback**: Automatically tries multiple free LLM models via OpenRouter
+- **Floating Chat Widget**: Always accessible from the dashboard
+
 ## 🛠️ Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
@@ -28,6 +35,7 @@ A two-sided marketplace SaaS platform connecting influencers with brands for cam
 - **Storage**: Supabase Storage
 - **Form Handling**: React Hook Form + Zod
 - **State Management**: React Context API
+- **AI/RAG**: OpenRouter API (LLM) + Local TF-IDF embeddings + In-memory vector store
 
 ## 📁 Project Structure
 
@@ -36,6 +44,9 @@ A two-sided marketplace SaaS platform connecting influencers with brands for cam
 │   ├── app/                    # Next.js App Router pages
 │   │   ├── (auth)/             # Authentication pages
 │   │   ├── (dashboard)/        # Protected dashboard pages
+│   │   ├── api/rag/            # RAG chatbot API routes
+│   │   │   ├── chat/route.ts   # Chat endpoint (auto-ingests + LLM)
+│   │   │   └── ingest/route.ts # Manual ingestion endpoint
 │   │   ├── globals.css         # Global styles
 │   │   ├── layout.tsx          # Root layout
 │   │   └── page.tsx            # Landing page
@@ -43,11 +54,19 @@ A two-sided marketplace SaaS platform connecting influencers with brands for cam
 │   │   ├── ui/                 # shadcn/ui components
 │   │   ├── auth/               # Authentication components
 │   │   ├── layout/             # Layout components
+│   │   ├── chat/               # RAG chatbot widget
 │   │   ├── influencer/         # Influencer-specific components
 │   │   ├── brand/              # Brand-specific components
 │   │   ├── campaign/           # Campaign components
 │   │   ├── dashboard/          # Dashboard widgets
 │   │   └── messaging/          # Chat components
+│   ├── rag/                    # RAG pipeline
+│   │   ├── docs/               # Knowledge base (Markdown files)
+│   │   ├── loader.ts           # Markdown document loader
+│   │   ├── chunker.ts          # Text chunking with overlap
+│   │   ├── embeddings.ts       # Local TF-IDF embeddings
+│   │   ├── vectorstore.ts      # In-memory cosine similarity search
+│   │   └── prompt.ts           # RAG prompt template
 │   ├── hooks/                  # Custom React hooks
 │   ├── services/               # API service functions
 │   ├── types/                  # TypeScript type definitions
@@ -104,7 +123,10 @@ A two-sided marketplace SaaS platform connecting influencers with brands for cam
    NEXT_PUBLIC_SUPABASE_URL=your-project-url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   OPENROUTER_API_KEY=your-openrouter-api-key
    ```
+
+   > Get a free OpenRouter API key at [openrouter.ai/keys](https://openrouter.ai/keys). Enable the "Allow free endpoints" privacy toggle in [settings](https://openrouter.ai/settings/privacy).
 
 5. **Set up Supabase Storage**
    
@@ -175,6 +197,19 @@ The project uses a custom implementation of shadcn/ui components:
 - Separator, ScrollArea, Tooltip
 - Loading spinner
 
+## 🤖 RAG Chatbot Architecture
+
+The platform includes an AI-powered assistant built with a Retrieval-Augmented Generation (RAG) pipeline:
+
+1. **Knowledge Base** — Markdown docs in `src/rag/docs/` covering platform features, FAQs, and guidelines
+2. **Ingestion** — Docs are loaded → split into overlapping 500-char chunks → converted to TF-IDF vectors
+3. **Search** — User queries are vectorized and matched against chunks via cosine similarity
+4. **Generation** — Top-K relevant chunks are injected into a prompt sent to a free LLM via OpenRouter
+5. **Fallback** — 8 free models are tried in sequence (Gemma, Llama, DeepSeek, Qwen, Mistral, etc.)
+6. **Auto-Ingest** — On Vercel serverless, the chat route auto-loads the knowledge base on cold start
+
+The chatbot appears as a floating widget on all dashboard pages.
+
 ## 🔒 Security
 
 - All API calls use Supabase RLS policies
@@ -210,3 +245,4 @@ This project is licensed under the MIT License.
 - [shadcn/ui](https://ui.shadcn.com/)
 - [Radix UI](https://www.radix-ui.com/)
 - [Lucide Icons](https://lucide.dev/)
+- [OpenRouter](https://openrouter.ai/) - Free LLM API gateway
