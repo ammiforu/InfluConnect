@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { vectorStore } from '@/rag/vectorstore';
 import { buildRAGPrompt } from '@/rag/prompt';
+import { loadMarkdownDocs } from '@/rag/loader';
+import { chunkText } from '@/rag/chunker';
+import { buildVocabulary, generateEmbeddings } from '@/rag/embeddings';
+import type { VectorEntry } from '@/rag/vectorstore';
 
 // Lazy-initialise so the constructor doesn't run at build time
 // (OPENROUTER_API_KEY isn't available during `next build` page-data collection)
@@ -18,6 +22,32 @@ function getOpenAI(): OpenAI {
     });
   }
   return _openai;
+}
+
+/**
+ * Auto-ingest knowledge base if the vector store is empty.
+ * On Vercel, each serverless function has its own memory,
+ * so we must ingest within the same process that handles chat.
+ */
+async function ensureIngested(): Promise<void> {
+  if (vectorStore.isReady()) return;
+
+  const docs = loadMarkdownDocs();
+  const allChunks = docs.flatMap((doc) =>
+    chunkText(doc.content, { filename: doc.metadata.filename })
+  );
+  const texts = allChunks.map((chunk) => chunk.text);
+  buildVocabulary(texts);
+  const embeddings = await generateEmbeddings(texts);
+
+  const entries: VectorEntry[] = allChunks.map((chunk, i) => ({
+    text: chunk.text,
+    embedding: embeddings[i],
+    metadata: chunk.metadata,
+  }));
+
+  vectorStore.setEntries(entries);
+  console.log(`[RAG] Auto-ingested ${docs.length} docs, ${entries.length} chunks`);
 }
 
 /**
@@ -41,13 +71,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 1: Check that the vector store has been populated
-    if (!vectorStore.isReady()) {
-      return NextResponse.json(
-        { error: 'Knowledge base not loaded. Call POST /api/rag/ingest first.' },
-        { status: 503 }
-      );
-    }
+    // Step 1: Auto-ingest if vector store is empty (handles serverless cold starts)
+    await ensureIngested();
 
     // Step 2: Semantic search — find top-K relevant chunks
     const topK = 5;
