@@ -87,10 +87,15 @@ export async function POST(request: NextRequest) {
     const prompt = buildRAGPrompt(context, question);
 
     // Step 5: Call the LLM with the context-augmented prompt
-    // Try multiple free models in order of preference
+    // Expanded free model list — if one is rate-limited, try the next
     const freeModels = [
       'google/gemma-3-1b-it:free',
       'meta-llama/llama-3.2-3b-instruct:free',
+      'deepseek/deepseek-r1-0528:free',
+      'microsoft/mai-ds-r1:free',
+      'google/gemma-3-4b-it:free',
+      'qwen/qwen3-8b:free',
+      'mistralai/mistral-small-3.1-24b-instruct:free',
       'openai/gpt-oss-120b:free',
     ];
 
@@ -112,6 +117,8 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         lastError = err as Error;
         console.warn(`Model ${model} failed, trying next...`);
+        // Brief pause before trying the next model to avoid burst rate limits
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     }
 
