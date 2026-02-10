@@ -3,15 +3,22 @@ import OpenAI from 'openai';
 import { vectorStore } from '@/rag/vectorstore';
 import { buildRAGPrompt } from '@/rag/prompt';
 
-// OpenRouter is OpenAI-compatible — just change the base URL
-const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: 'https://openrouter.ai/api/v1',
-  defaultHeaders: {
-    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-    'X-Title': 'InfluConnect RAG Chatbot',
-  },
-});
+// Lazy-initialise so the constructor doesn't run at build time
+// (OPENROUTER_API_KEY isn't available during `next build` page-data collection)
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: {
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        'X-Title': 'InfluConnect RAG Chatbot',
+      },
+    });
+  }
+  return _openai;
+}
 
 /**
  * POST /api/rag/chat
@@ -67,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     for (const model of freeModels) {
       try {
-        completion = await openai.chat.completions.create({
+        completion = await getOpenAI().chat.completions.create({
           model,
           messages: [
             { role: 'system', content: prompt },
